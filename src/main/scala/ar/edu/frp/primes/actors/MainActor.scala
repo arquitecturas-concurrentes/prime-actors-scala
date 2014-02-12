@@ -13,13 +13,16 @@ case class NotPrime(notPrime: Long)
 case object Statistics
 
 class MainActor extends Actor with ActorLogging {
+  val numberOfWorkers = 10
+  val throughput = 2
+
   var workers: Seq[ActorRef] = Seq()
-  var currentPrimes = List[Long](2, 3)
-  var currentCandidate = 5
+  var currentPrimes = List[Long](2, 3, 5, 7, 11, 13, 17, 19, 23)
+  var currentCandidate = 25
   var startStamp: Long = 0
 
   override def preStart(): Unit = {
-    workers = (1 to 8).map { i =>
+    workers = (1 to numberOfWorkers).map { i =>
       context.actorOf(Props[PrimesFinder], s"finder$i")
     }
 
@@ -40,8 +43,10 @@ class MainActor extends Actor with ActorLogging {
   }
 
   def sendPrimeCandidateTo(worker: ActorRef) {
-    worker ! IsPrime(currentPrimes, currentCandidate)
-    currentCandidate += 2
+    for (i <- (1 to throughput)) {
+      worker ! IsPrime(currentPrimes, currentCandidate)
+      currentCandidate += 2
+    }
   }
 
   def printStatistics {
