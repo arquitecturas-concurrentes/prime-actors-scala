@@ -1,13 +1,22 @@
 package ar.edu.frp.primes.actors;
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import akka.actor.Actor
-import akka.actor.ActorRef
-import akka.actor.Props
-import akka.actor.ActorLogging
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.DurationLong
 
-case class IsPrime(currentPrimes: Seq[Long], candidate: Long)
+import akka.actor.Actor
+import akka.actor.ActorLogging
+import akka.actor.ActorRef
+import akka.actor.PoisonPill
+import akka.actor.Props
+import akka.actor.actorRef2Scala
+
+trait IsPrimeMessage {
+  def candidate: Long
+}
+
+case class IsPrime(currentPrimes: Seq[Long], candidate: Long) extends IsPrimeMessage
+case class IsPrimeSimple(candidate: Long) extends IsPrimeMessage
 case class PrimeFound(prime: Long)
 case class NotPrime(notPrime: Long)
 case object Statistics
@@ -15,6 +24,7 @@ case object Statistics
 class MainActor extends Actor with ActorLogging {
   val numberOfWorkers = 10
   val throughput = 2
+  val testDuration = 10.seconds
 
   var workers: Seq[ActorRef] = Seq()
   var currentPrimes = List[Long](2, 3, 5, 7, 11, 13, 17, 19, 23)
@@ -30,7 +40,11 @@ class MainActor extends Actor with ActorLogging {
 
     startStamp = System.currentTimeMillis
 
-    context.system.scheduler.schedule(1.second, 1.second, context.self, Statistics)
+    context.system.scheduler.schedule(1.second, 1.second, self, Statistics)
+    if (testDuration.isFinite()) {
+      //TODO: Por la cola de mensajes, resulta que tarda un montón en morirse el actor. Estaría bueno investigar un mailbox prioritario o algo así
+      context.system.scheduler.scheduleOnce(testDuration, self, PoisonPill)
+    }
   }
 
   override def receive = {
@@ -44,10 +58,12 @@ class MainActor extends Actor with ActorLogging {
 
   def sendPrimeCandidateTo(worker: ActorRef) {
     for (i <- (1 to throughput)) {
-      worker ! IsPrime(currentPrimes, currentCandidate)
+      worker ! PrimesFinder.algorithm.buildMessage(currentCandidate, currentPrimes)
       currentCandidate += 2
     }
   }
+
+  override def postStop() = printStatistics
 
   def printStatistics {
     val primesAmount = currentPrimes.size
