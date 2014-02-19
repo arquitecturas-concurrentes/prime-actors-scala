@@ -27,7 +27,7 @@ class MainActor extends Actor with ActorLogging {
   val testDuration = 10.seconds
 
   var workers: Seq[ActorRef] = Seq()
-  var currentPrimes = List[Long](2, 3, 5, 7, 11, 13, 17, 19, 23)
+  var currentPrimes = Vector[Long](2, 3, 5, 7, 11, 13, 17, 19, 23)
   var currentCandidate = 25
   var startStamp: Long = 0
 

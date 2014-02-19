@@ -10,7 +10,7 @@ trait PrimeAlgorithm {
   }
 
   def isPrime(m: IsPrimeMessage): Boolean
-  def buildMessage(currentCandidate: Int, currentPrimes: List[Long]): IsPrimeMessage
+  def buildMessage(currentCandidate: Int, currentPrimes: Seq[Long]): IsPrimeMessage
   def findDivisorUntilSquareRoot(currentPrimes: Seq[Long], candidate: Long) =
     currentPrimes.toStream.takeWhile(x => x * x <= candidate).find(candidate.isDivisibleBy(_))
 }
@@ -21,7 +21,7 @@ object ListBasedAlgorithm extends PrimeAlgorithm {
   	case IsPrime(currentPrimes, candidate) => findDivisorUntilSquareRoot(currentPrimes, candidate).isEmpty
   }
 
-  def buildMessage(currentCandidate: Int, currentPrimes: List[Long]) = IsPrime(currentPrimes, currentCandidate)
+  def buildMessage(currentCandidate: Int, currentPrimes: Seq[Long]) = IsPrime(currentPrimes, currentCandidate)
 }
 
 object BruteForceAlgorithm extends PrimeAlgorithm {
@@ -30,7 +30,7 @@ object BruteForceAlgorithm extends PrimeAlgorithm {
   	case IsPrimeSimple(candidate) => findDivisorUntilSquareRoot((3l to candidate), candidate).isEmpty
   }
 
-  def buildMessage(currentCandidate: Int, currentPrimes: List[Long]) = IsPrimeSimple(currentCandidate)
+  def buildMessage(currentCandidate: Int, currentPrimes: Seq[Long]) = IsPrimeSimple(currentCandidate)
 }
 
 object PrimesFinder {
